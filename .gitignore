@@ -1,0 +1,59 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+*.swp
+*~
+
+# Java / build
+build/
+out/
+bin/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+poke-rando-release/
+dist/
+target/
+
+# Nintendo / Pokémon dumps (NEVER commit)
+*.nds
+*.NDS
+*.gba
+*.GBA
+*.gb
+*.GB
+*.gbc
+*.GBC
+*.xdelta
+*.bps
+*.ips
+*.ups
+*.3ds
+*.cia
+*.cxi
+*.sav
+*.dsv
+*.duc
+*.rtc
+
+# Randomizer local junk
+error_*.txt
+*.log
+*.rndp
+*.RNDP
+config.ini
+customnames.rncn
+nicknames.txt
+trainernames.txt
+trainerclasses.txt
+
+# Archives / local downloads
+*.zip
+*.rar
+*.7z
+
+# Nested tooling
+upr-zx/.git/
