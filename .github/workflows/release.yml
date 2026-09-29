@@ -1,4 +1,4 @@
-name: Build release JAR
+name: Build release package
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
           distribution: temurin
           java-version: "11"
 
-      - name: Build
+      - name: Build plug-and-play package
         shell: pwsh
         run: ./scripts/build.ps1
 
@@ -26,13 +26,23 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: PokeRandoZX-HGMinimal
-          path: dist/PokeRandoZX-HGMinimal.jar
+          path: |
+            dist/PokeRandoZX-HGMinimal.zip
+            dist/PokeRandoZX-HGMinimal.jar
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/PokeRandoZX-HGMinimal.jar
+          files: |
+            dist/PokeRandoZX-HGMinimal.zip
+            dist/PokeRandoZX-HGMinimal.jar
           generate_release_notes: true
+          body: |
+            ## Download
+            Grab **PokeRandoZX-HGMinimal.zip**, extract, run the launcher for your OS.
+            No extra downloads needed (Java/JRE required, same as UPR ZX).
+
+            Do not redistribute ROMs with this tool.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,8 +1,8 @@
-# Build HeartGold Minimal Randomizer JAR (GPL-3.0 fork of UPR ZX)
+# Build HeartGold Minimal Randomizer (plug-and-play package in dist/)
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1
-# Optional:
-#   $env:HG_MINIMAL_ROM = "C:\path\to\HeartGold Minimal.nds"   # run smoke load test
+# Optional smoke test:
+#   $env:HG_MINIMAL_ROM = "C:\path\to\HeartGold Minimal.nds"
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
@@ -23,7 +23,7 @@ function Find-JdkBin {
             return $c
         }
     }
-    throw "No se encontro un JDK con javac/jar. Instala JDK 11+."
+    throw "JDK with javac/jar not found. Install JDK 11+."
 }
 
 $jdkBin = Find-JdkBin
@@ -39,20 +39,21 @@ $uprUrl = "https://github.com/Ajarmar/universal-pokemon-randomizer-zx/releases/d
 
 if (-not (Test-Path $releaseJar)) {
     New-Item -ItemType Directory -Force -Path $vendorDir | Out-Null
-    Write-Host "Downloading UPR ZX 4.6.1..."
+    Write-Host "Downloading UPR ZX 4.6.1 (build dependency only)..."
     Invoke-WebRequest -Uri $uprUrl -OutFile $zipPath
     Expand-Archive -Path $zipPath -DestinationPath $vendorDir -Force
     if (-not (Test-Path $releaseJar)) {
         $found = Get-ChildItem $vendorDir -Filter "PokeRandoZX.jar" -Recurse | Select-Object -First 1
         if ($found) { Copy-Item $found.FullName $releaseJar -Force }
     }
-    if (-not (Test-Path $releaseJar)) { throw "No se pudo obtener PokeRandoZX.jar" }
+    if (-not (Test-Path $releaseJar)) { throw "Could not obtain PokeRandoZX.jar" }
 }
 
 $outDir = Join-Path $root "build\classes"
 $extractDir = Join-Path $root "build\jar-extract"
 $distDir = Join-Path $root "dist"
 $patchedJar = Join-Path $distDir "PokeRandoZX-HGMinimal.jar"
+$packageZip = Join-Path $distDir "PokeRandoZX-HGMinimal.zip"
 
 New-Item -ItemType Directory -Force -Path $outDir, $distDir | Out-Null
 if (Test-Path $extractDir) { Remove-Item $extractDir -Recurse -Force }
@@ -89,7 +90,23 @@ Push-Location $extractDir
 & $jar cfm $patchedJar $manifest .
 Pop-Location
 
-Write-Host "Built: $patchedJar"
+# Plug-and-play package (same layout as UPR ZX releases)
+Copy-Item (Join-Path $root "launcher_WINDOWS.bat") $distDir -Force
+Copy-Item (Join-Path $root "launcher_UNIX.sh") $distDir -Force
+Copy-Item (Join-Path $root "launcher_MAC.command") $distDir -Force
+Copy-Item (Join-Path $root "scripts\release-readme.txt") (Join-Path $distDir "README.txt") -Force
+
+if (Test-Path $packageZip) { Remove-Item $packageZip -Force }
+Compress-Archive -Path @(
+    (Join-Path $distDir "PokeRandoZX-HGMinimal.jar"),
+    (Join-Path $distDir "launcher_WINDOWS.bat"),
+    (Join-Path $distDir "launcher_UNIX.sh"),
+    (Join-Path $distDir "launcher_MAC.command"),
+    (Join-Path $distDir "README.txt")
+) -DestinationPath $packageZip
+
+Write-Host "Built JAR:  $patchedJar"
+Write-Host "Built ZIP:  $packageZip"
 
 $rom = $env:HG_MINIMAL_ROM
 if ($rom -and (Test-Path -LiteralPath $rom)) {
@@ -97,5 +114,5 @@ if ($rom -and (Test-Path -LiteralPath $rom)) {
     & $java -cp $patchedJar com.dabomstew.pkrandom.HgMinimalLoadTest $rom
     exit $LASTEXITCODE
 } else {
-    Write-Host "Sin ROM de prueba (define HG_MINIMAL_ROM para smoke test)."
+    Write-Host "No ROM smoke test (set HG_MINIMAL_ROM to enable)."
 }
